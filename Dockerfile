@@ -1,5 +1,5 @@
 # Step 1: Build the Go binary
-FROM golang:1.21 AS builder
+FROM golang:1.23.3 AS builder
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY . .
 RUN go build -o server .
 
 # Step 2: Create the final image
-FROM debian:bullseye-slim
+FROM golang:1.23.3
 
 # Set the Current Working Directory inside the container
 WORKDIR /root/

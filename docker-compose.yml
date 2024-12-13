@@ -1,0 +1,12 @@
+services:
+  go-server:
+    build: .
+    image: go-server:latest
+    ports:
+      - "8080:8080"
+    networks:
+      - go-server-network
+
+networks:
+  go-server-network:
+    external: true
