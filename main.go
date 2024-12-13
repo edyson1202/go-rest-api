@@ -51,11 +51,13 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	clients[conn] = true
+	fmt.Println("New client connected!")
 
 	for {
 		var msg chatroom.Message
 		err := conn.ReadJSON(&msg)
 		if err != nil {
+			fmt.Println("Client disconnected!")
 			fmt.Println(err)
 			delete(clients, conn)
 			return
@@ -173,7 +175,6 @@ func (h *GamesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *GamesHandler) CreateGame(w http.ResponseWriter, r *http.Request) {
-	// Game object that will be populated from JSON payload
 	var game games.Game
 	err := json.NewDecoder(r.Body).Decode(&game)
 
@@ -189,8 +190,6 @@ func (h *GamesHandler) CreateGame(w http.ResponseWriter, r *http.Request) {
 func (h *GamesHandler) ListGames(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 
-	// Get specific query parameter by key
-	//var page Page = {}
 	pageNr, err := strconv.Atoi(params.Get("page"))
 	if err != nil {
 		fmt.Println("Error: query param invalid!")
@@ -219,9 +218,8 @@ func (h *GamesHandler) ListGames(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonBytes)
 }
 func (h *GamesHandler) GetGame(w http.ResponseWriter, r *http.Request) {
-	// Extract the resource ID using a regex
 	matches := GameReWithID.FindStringSubmatch(r.URL.Path)
-	// Expect matches to be length >= 2 (full string + 1 matching group)
+
 	if len(matches) < 2 {
 		InternalServerErrorHandler(w, r)
 		return
@@ -234,28 +232,23 @@ func (h *GamesHandler) GetGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Retrieve recipe from the store
 	game, err := h.store.Get(num)
 	if err != nil {
-		// Special case of NotFound Error
 		if err == games.NotFoundErr {
 			NotFoundHandler(w, r)
 			return
 		}
 
-		// Every other error
 		InternalServerErrorHandler(w, r)
 		return
 	}
 
-	// Convert the struct into JSON payload
 	jsonBytes, err := json.Marshal(game)
 	if err != nil {
 		InternalServerErrorHandler(w, r)
 		return
 	}
 
-	// Write the results
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonBytes)
 }
@@ -265,8 +258,7 @@ func (h *GamesHandler) UpdateGame(w http.ResponseWriter, r *http.Request) {
 		InternalServerErrorHandler(w, r)
 		return
 	}
-
-	// Recipe object that will be populated from JSON payload
+	
 	var game games.Game
 	if err := json.NewDecoder(r.Body).Decode(&game); err != nil {
 		InternalServerErrorHandler(w, r)

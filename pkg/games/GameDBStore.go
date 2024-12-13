@@ -86,7 +86,6 @@ func (m MemStore) Get(id int) (Game, error) {
 func (m MemStore) List(page Page) ([]Game, error) {
 	rows, err := m.db.Query(sqlGetAllStatement, page.Size, page.Size*page.Page)
 	if err != nil {
-		// handle this error better than this
 		panic(err)
 	}
 	defer rows.Close()
@@ -98,7 +97,6 @@ func (m MemStore) List(page Page) ([]Game, error) {
 		var game Game
 		err = rows.Scan(&game.Id, &game.ReleaseYear, &game.Name, &game.Category)
 		if err != nil {
-			// handle this error
 			panic(err)
 		}
 		fmt.Println(id, firstName)
