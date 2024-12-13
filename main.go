@@ -3,13 +3,20 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"io"
 	"net/http"
+	"networking-lab02/pkg/chatroom"
 	"networking-lab02/pkg/games"
 	"os"
 	"regexp"
 	"strconv"
 )
+
+var clients = make(map[*websocket.Conn]bool)
+var broadcast = make(chan chatroom.Message)
+
+const port = 8080
 
 func main() {
 	store := games.NewMemStore()
@@ -22,8 +29,55 @@ func main() {
 	mux.Handle("/games/", gamesHandler)
 	mux.Handle("/file", &fileUploadHandler{})
 
-	http.ListenAndServe(":8080", mux)
+	mux.HandleFunc("/websocket", handleConnections)
 
+	go handleMessages()
+
+	fmt.Println("Server started on :" + strconv.Itoa(port))
+	err := http.ListenAndServe(":"+strconv.Itoa(port), mux)
+
+	if err != nil {
+		panic("Error starting server: " + err.Error())
+	}
+
+}
+
+func handleConnections(w http.ResponseWriter, r *http.Request) {
+	conn, err := chatroom.Upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer conn.Close()
+
+	clients[conn] = true
+
+	for {
+		var msg chatroom.Message
+		err := conn.ReadJSON(&msg)
+		if err != nil {
+			fmt.Println(err)
+			delete(clients, conn)
+			return
+		}
+
+		broadcast <- msg
+	}
+}
+
+func handleMessages() {
+	for {
+		msg := <-broadcast
+
+		for client := range clients {
+			err := client.WriteJSON(msg)
+			if err != nil {
+				fmt.Println(err)
+				client.Close()
+				delete(clients, client)
+			}
+		}
+	}
 }
 
 type homeHandler struct{}

@@ -9,13 +9,13 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data  # Persist data using a Docker volume
+      - pgdata:/var/lib/postgresql/data
     networks:
       - go-server-network
-    restart: always  # Optional: Automatically restart the container if it fails or is stopped
+    restart: always
 
 volumes:
-  pgdata:  # Define a volume named 'pgdata' for persistent storage
+  pgdata:
 
 networks:
   go-server-network:
